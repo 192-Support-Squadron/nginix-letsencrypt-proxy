@@ -1,0 +1,53 @@
+upstream backend {
+    {% for backend in backends -%}
+    server {{ backend.fqdn }}:{{ backend.port }};
+    {%- endfor %}
+}
+
+{% for server in servers %}
+server {
+    listen 80;
+    server_name {{ server.domain }};
+    server_tokens off;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name {{ server.domain }};
+    server_tokens off;
+
+    ssl_protocols TLSv1.3;
+    ssl_ciphers 'TLS_AES_256_GCM_SHA384:ECDHE-ECDSA-AES256-GCM-SHA384';
+    ssl_prefer_server_ciphers on;
+    ssl_certificate /etc/letsencrypt/live/{{ server.domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ server.domain }}/privkey.pem;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1h;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header    Host                $http_host;
+        proxy_set_header    X-Real-IP           $remote_addr;
+        proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+    }
+}
+{% endfor %}
