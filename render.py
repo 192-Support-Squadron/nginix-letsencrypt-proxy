@@ -16,7 +16,7 @@ def get_render_name(template_file: str) -> str:
     return template_file.split(".")[0]
 
 
-def render_template(yaml_file, template_file):
+def render_template(yaml_file, template_file, extension: str):
     with open(yaml_file, "r", -1, "utf-8") as yaml_variables:
         params = yaml.safe_load(yaml_variables)
 
@@ -26,12 +26,12 @@ def render_template(yaml_file, template_file):
     # Render template with parameters
     output = template.render(params)
     
-    config_name = get_render_name(template_file) + ".conf"
+    config_name = get_render_name(template_file) + "." + extension
     # Write the rendered config to a file
-    with open(config_name, "w", -1, "utf-8") as config:
+    with open(f"./rendered/{config_name}", "w", -1, "utf-8") as config:
         config.write(output)
 
-    print("nginx.conf has been generated.")
+    print(f"{config_name} has been generated.")
 
 
 if __name__ == "__main__":
@@ -50,4 +50,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    render_template(args.yaml, args.template)
+    render_template(args.yaml, args.template, "conf")
+    render_template(args.yaml, "compose.jinja", "yaml")
