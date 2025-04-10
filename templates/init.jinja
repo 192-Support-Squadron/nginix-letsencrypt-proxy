@@ -25,6 +25,7 @@ docker-compose run --rm --entrypoint "`
     --key-type ecdsa `
     --elliptic-curve secp384r1 `
     --agree-tos `
+    --no-eff-email `
     --force-renewal" certbot
 
 {%- endfor %}
