@@ -4,7 +4,7 @@ upstream backend {
     {%- endfor %}
 }
 
-{% for server in servers %}
+{% for server in servers -%}
 server {
     listen 80;
     server_name {{ server.domain }};
