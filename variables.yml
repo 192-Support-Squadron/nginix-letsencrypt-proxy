@@ -4,3 +4,4 @@ backends:
 servers:
   - domain: test.notreal.mil
 volume_path: /opt/project_name/
+email: noreply@notreal.mil
