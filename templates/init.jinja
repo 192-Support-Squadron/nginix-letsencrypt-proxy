@@ -1,0 +1,34 @@
+{% for server in servers -%}
+Write-Console "Generate Self Signed Certificate to use for inital NGINX"
+New-Item -ItemType "Directory" "{{ volume_path }}certbot/conf/live/{{ server.domain }}"
+
+docker compose run --rm --entrypoint "\
+  openssl req -x509 -nodes -newkey rsa:2048 -days 1\
+    -keyout '/etc/letsencrypt/live/{{ server.domain }}/privkey.pem' \
+    -out '/etc/letsencrypt/live/{{ server.domain }}/fullchain.pem' \
+    -subj '/CN=temp'" certbot
+
+Write-Console "Starting nginx"
+docker compose up --force-recreate -d nginx
+
+Write-Console "Deleting Self Signed Certificate"
+docker-compose run --rm --entrypoint "\
+  rm -Rf /etc/letsencrypt/live/{{ server.domain }} && \
+  rm -Rf /etc/letsencrypt/archive/{{ server.domain }} && \
+  rm -Rf /etc/letsencrypt/renewal/{{ server.domain }}.conf" certbot
+
+Write-Console "Requesting Let's Encrypt certificate for {{ server.domain }}"
+docker-compose run --rm --entrypoint "\
+  certbot certonly --webroot -w /var/www/certbot \
+    0 \
+    --email {{ email }} \
+    -d {{ domain }} \
+    --key-type ecdsa \
+    --elliptic-curve secp384r1 \
+    --agree-tos \
+    --force-renewal" certbot
+
+{%- endfor %}
+
+Write-Console  "Reloading nginx"
+docker compose exec nginx nginx -s reload
