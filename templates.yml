@@ -1,0 +1,6 @@
+- path: templates/compose.jinja
+  extension: yaml
+- path: templates/init.jinja
+  extension: sh
+- path: templates/nginx.jinja
+  extension: conf
